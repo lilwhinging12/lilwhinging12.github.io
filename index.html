@@ -1,6 +1,357 @@
 <!DOCTYPE html>
-  <html>
-    <body>
-        <img src="webblogotop.png" height=40vh>
-    </body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Timer - Thought Capture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .status {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .status.locked {
+            background: rgba(220, 38, 38, 0.2);
+        }
+
+        .status.available {
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .timer-display {
+            font-size: 4em;
+            font-weight: 700;
+            margin: 30px 0;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.05em;
+        }
+
+        .progress-ring {
+            margin: 20px auto;
+        }
+
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.3s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        button:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        button.primary {
+            background: rgba(34, 197, 94, 0.3);
+            border-color: rgba(34, 197, 94, 0.5);
+        }
+
+        button.primary:hover:not(:disabled) {
+            background: rgba(34, 197, 94, 0.5);
+        }
+
+        button.danger {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        button.danger:hover:not(:disabled) {
+            background: rgba(239, 68, 68, 0.5);
+        }
+
+        .info {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .hour-progress {
+            margin-top: 20px;
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .hour-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .hour-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #34d399, #10b981);
+            transition: width 1s linear;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Focus Timer</h1>
+        <p class="subtitle">5 minutes to capture thoughts per hour</p>
+        
+        <div class="status" id="status">Ready to start</div>
+        
+        <svg class="progress-ring" width="200" height="200">
+            <circle
+                class="progress-ring-circle"
+                stroke="rgba(255, 255, 255, 0.3)"
+                stroke-width="8"
+                fill="transparent"
+                r="90"
+                cx="100"
+                cy="100"
+            />
+            <circle
+                id="progress"
+                class="progress-ring-circle"
+                stroke="#fff"
+                stroke-width="8"
+                fill="transparent"
+                r="90"
+                cx="100"
+                cy="100"
+                stroke-dasharray="565.48"
+                stroke-dashoffset="0"
+            />
+        </svg>
+        
+        <div class="timer-display" id="timer">5:00</div>
+        
+        <div class="controls">
+            <button id="startBtn" class="primary">Start Timer</button>
+            <button id="stopBtn" class="danger" disabled>Stop Timer</button>
+            <button id="resetBtn">Reset Hour</button>
+        </div>
+        
+        <div class="hour-progress">
+            <div id="hourInfo">Hour progress: 0:00 / 60:00</div>
+            <div class="hour-bar">
+                <div class="hour-bar-fill" id="hourBarFill" style="width: 0%"></div>
+            </div>
+        </div>
+        
+        <div class="info">
+            <strong>How it works:</strong><br>
+            • Each hour, you get 5 minutes of "pause time"<br>
+            • Use it to capture interesting thoughts<br>
+            • Once the 5 minutes are up, you're locked into focused work<br>
+            • The hour resets automatically after 60 minutes
+        </div>
+    </div>
+
+    <script>
+        // Timer state
+        let remainingSeconds = 300; // 5 minutes
+        let isRunning = false;
+        let isPaused = false;
+        let timerInterval = null;
+        let hourStartTime = null;
+        let hourInterval = null;
+        let isLocked = false;
+
+        // Elements
+        const timerDisplay = document.getElementById('timer');
+        const statusDisplay = document.getElementById('status');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const progress = document.getElementById('progress');
+        const hourInfo = document.getElementById('hourInfo');
+        const hourBarFill = document.getElementById('hourBarFill');
+
+        const circumference = 2 * Math.PI * 90;
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateDisplay() {
+            timerDisplay.textContent = formatTime(remainingSeconds);
+            
+            // Update progress ring
+            const offset = circumference - (remainingSeconds / 300) * circumference;
+            progress.style.strokeDashoffset = offset;
+        }
+
+        function updateStatus() {
+            if (isLocked) {
+                statusDisplay.textContent = '🔒 Locked - Focus on your work!';
+                statusDisplay.className = 'status locked';
+            } else if (isRunning) {
+                statusDisplay.textContent = '⏸️ Pause time active - Capture your thoughts';
+                statusDisplay.className = 'status available';
+            } else if (remainingSeconds === 0) {
+                statusDisplay.textContent = '⏱️ Pause time exhausted';
+                statusDisplay.className = 'status locked';
+            } else {
+                statusDisplay.textContent = '✨ Pause time available';
+                statusDisplay.className = 'status available';
+            }
+        }
+
+        function updateHourProgress() {
+            if (!hourStartTime) return;
+            
+            const elapsed = Math.floor((Date.now() - hourStartTime) / 1000);
+            const hourSeconds = 3600; // 60 minutes
+            
+            if (elapsed >= hourSeconds) {
+                resetHour();
+                return;
+            }
+            
+            const elapsedMins = Math.floor(elapsed / 60);
+            const elapsedSecs = elapsed % 60;
+            hourInfo.textContent = `Hour progress: ${elapsedMins}:${elapsedSecs.toString().padStart(2, '0')} / 60:00`;
+            
+            const percentage = (elapsed / hourSeconds) * 100;
+            hourBarFill.style.width = `${percentage}%`;
+        }
+
+        function startTimer() {
+            if (isLocked || remainingSeconds === 0) return;
+            
+            if (!hourStartTime) {
+                hourStartTime = Date.now();
+                hourInterval = setInterval(updateHourProgress, 1000);
+            }
+            
+            isRunning = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            updateStatus();
+            
+            timerInterval = setInterval(() => {
+                remainingSeconds--;
+                updateDisplay();
+                
+                if (remainingSeconds <= 0) {
+                    remainingSeconds = 0;
+                    stopTimer();
+                    lockWork();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            startBtn.disabled = remainingSeconds === 0 || isLocked;
+            stopBtn.disabled = true;
+            updateStatus();
+        }
+
+        function lockWork() {
+            isLocked = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = true;
+            updateStatus();
+        }
+
+        function resetHour() {
+            clearInterval(timerInterval);
+            clearInterval(hourInterval);
+            
+            remainingSeconds = 300;
+            isRunning = false;
+            isLocked = false;
+            hourStartTime = null;
+            
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            
+            hourBarFill.style.width = '0%';
+            hourInfo.textContent = 'Hour progress: 0:00 / 60:00';
+            
+            updateDisplay();
+            updateStatus();
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startTimer);
+        stopBtn.addEventListener('click', stopTimer);
+        resetBtn.addEventListener('click', resetHour);
+
+        // Initialize
+        updateDisplay();
+        updateStatus();
+    </script>
+</body>
 </html>
